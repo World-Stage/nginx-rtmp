@@ -8,8 +8,8 @@ rtmp {
     server {
         listen 1935;
         chunk_size 4096;
-        on_publish http://spring-boot:8082/stream/publish;
-        on_publish_done http://spring-boot:8082/stream/unpublish;
+        on_publish http://$API_HOST/streams/publish;
+        on_publish_done http://$API_HOST/streams/unpublish;
 
         application live {
             live on;
@@ -22,7 +22,7 @@ http {
     server {
         listen 8080;
         location /hls/ {
-            alias /var/hls/; # Use alias to map /hls/{streamKey} to /var/hls/{streamKey}
+            alias $HLS_OUTPUT_DIR/;
             add_header Access-Control-Allow-Origin *;
         }
     }
