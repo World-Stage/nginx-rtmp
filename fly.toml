@@ -39,7 +39,7 @@ primary_region = 'iad'
     handlers = ["tls", "http"]
 
 [mounts]
-  source = "hls-data"
+  source = "hls_data"
   destination = "/mnt/hls"
 
 # VM resources
