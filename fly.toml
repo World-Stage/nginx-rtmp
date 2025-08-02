@@ -1,49 +1,56 @@
-# fly.toml app configuration file generated for nginx-rtmp on 2025-07-25T18:35:29-06:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
-app = 'nginx-rtmp'
+app = 'stream-service'
 primary_region = 'iad'
 
 [build]
+  dockerfile = "Dockerfile"
 
-# HTTP service for HLS (.m3u8, .ts files)
+[processes]
+  nginx = "/starter-nginx.sh"
+  transcoder = "index.js"
+
 [http_service]
-  internal_port = 8080
+  internal_port = 3001
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ['app']
+  processes = ['transcoder']
 
-# RTMP service for ingest (OBS, mobile apps)
-[[services]]
-  internal_port = 1935
-  protocol = "tcp"
+[env]
+  API_HOST = "stagio-api.fly.dev"
+  HLS_OUTPUT_DIR = "/mnt/hls"
+  NGINX_RTMP_URL = "rtmp://stream-service.fly.dev:1935/live"
+  NGINX_HLS_URL = "http://stream-service.fly.dev:8080/hls"
 
-  [[services.ports]]
-    port = 1935
-
-# HLS service explicitly mapped (optional, for clarity — already covered by http_service)
+# HLS via nginx
 [[services]]
   internal_port = 8080
   protocol = "tcp"
-
+  processes = ['nginx']
   [[services.ports]]
-    port = 80
-    handlers = ["http"]
+    port = 8080
 
+# RTMP via nginx
+[[services]]
+  internal_port = 1935
+  protocol = "tcp"
+  processes = ['nginx']
   [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
+    port = 1935
 
-[mounts]
+# Internal API access (for transcoder)
+[[services]]
+  internal_port = 3001
+  protocol = "tcp"
+  processes = ['transcoder']
+  [[services.ports]]
+    port = 3001
+
+[[mounts]]
   source = "hls_data"
   destination = "/mnt/hls"
 
-# VM resources
 [[vm]]
-  memory = '1gb'
+  memory = '2gb'
   cpu_kind = 'shared'
   cpus = 1
